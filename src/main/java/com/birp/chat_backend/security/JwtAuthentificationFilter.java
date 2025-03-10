@@ -2,6 +2,7 @@ package com.birp.chat_backend.security;
 
 import java.io.IOException;
 
+import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.birp.chat_backend.services.SessionService;
@@ -17,17 +18,15 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter{
 
     @Override
     protected void doFilterInternal(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        FilterChain filterChain) throws ServletException, IOException {
+        @NonNull HttpServletRequest request,
+        @NonNull HttpServletResponse response,
+        @NonNull FilterChain filterChain) throws ServletException, IOException {
         
         if (request.getRequestURL().equals("/users")) {
             String token = request.getHeader("x-otp");
             if (token == null || !sessionService.verifyToken(token)) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
             }
-
-            authenticationJwtTokenFilter
         }
     }
 
