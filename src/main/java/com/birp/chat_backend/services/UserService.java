@@ -1,6 +1,7 @@
 package com.birp.chat_backend.services;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,5 +17,9 @@ public class UserService {
 
     public List<User> fetchAllUsers() {
         return this.userRepository.findAll();
+    }
+
+    public Optional<User> fetchUserById(int userId) {
+        return this.userRepository.findById(userId);
     }
 }
