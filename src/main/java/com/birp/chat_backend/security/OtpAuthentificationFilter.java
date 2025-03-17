@@ -11,10 +11,12 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class OtpAuthentificationFilter extends OncePerRequestFilter {
 
-    private SessionService sessionService;
+    private final SessionService sessionService;
 
     @Override
     protected void doFilterInternal(
@@ -30,7 +32,6 @@ public class OtpAuthentificationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
         return;
-
     }
 
 }

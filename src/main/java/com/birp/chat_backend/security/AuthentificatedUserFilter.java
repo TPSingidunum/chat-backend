@@ -18,11 +18,13 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class AuthentificatedUserFilter extends OncePerRequestFilter {
 
-    private SessionService sessionService;
-    private UserService userService; 
+    private final SessionService sessionService;
+    private final UserService userService;
 
     @Override
     protected void doFilterInternal(
@@ -38,7 +40,7 @@ public class AuthentificatedUserFilter extends OncePerRequestFilter {
         }
 
         String jwt = authHeader.substring(7);
-        
+
         if (!sessionService.verifyToken(jwt)) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
             return;
@@ -52,9 +54,8 @@ public class AuthentificatedUserFilter extends OncePerRequestFilter {
         }
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-            user,
-            null
-        );
+                user,
+                null);
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
