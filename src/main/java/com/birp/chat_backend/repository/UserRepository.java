@@ -7,4 +7,5 @@ import com.birp.chat_backend.models.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer>{
+    boolean existsByEmail(String email);
 }

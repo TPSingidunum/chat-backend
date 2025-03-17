@@ -11,7 +11,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.birp.chat_backend.dtos.UserLoginDto;
+import com.birp.chat_backend.dto.UserLoginDto;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

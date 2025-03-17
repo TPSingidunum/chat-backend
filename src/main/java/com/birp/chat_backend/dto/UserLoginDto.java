@@ -1,4 +1,4 @@
-package com.birp.chat_backend.dtos;
+package com.birp.chat_backend.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

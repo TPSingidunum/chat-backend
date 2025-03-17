@@ -22,4 +22,12 @@ public class UserService {
     public Optional<User> fetchUserById(int userId) {
         return this.userRepository.findById(userId);
     }
+
+    public boolean existsByEmail(String email) {
+        return this.userRepository.existsByEmail(email);
+    }
+
+    public User save(User user) {
+        return this.userRepository.save(user);
+    }
 }
