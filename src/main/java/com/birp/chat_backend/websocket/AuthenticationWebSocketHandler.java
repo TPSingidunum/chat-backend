@@ -25,6 +25,7 @@ import com.birp.chat_backend.models.User;
 import com.birp.chat_backend.services.SessionService;
 import com.birp.chat_backend.services.UserService;
 import com.birp.chat_backend.utils.CertificateUtil;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.annotation.PostConstruct;
@@ -58,20 +59,42 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws Exception {
         String payload = message.getPayload();
-        logger.debug("Received message: {}", payload);
+        logger.debug("Received raw message: {}", payload);
         
-        // Determine message type by looking at the JSON structure
-        if (payload.contains("\"type\":\"AUTH_REQUEST\"")) {
-            handleAuthRequest(session, payload);
-        } else if (payload.contains("\"type\":\"CHALLENGE_RESPONSE\"")) {
-            handleChallengeResponse(session, payload);
-        } else {
-            // Handle regular messages once authenticated
-            if (isAuthenticated(session)) {
-                handleAuthenticatedMessage(session, payload);
+        try {
+            // Parse the message as a JSON object
+            JsonNode jsonNode = objectMapper.readTree(payload);
+            
+            // Get the message type
+            if (jsonNode.has("type")) {
+                String messageType = jsonNode.get("type").asText();
+                
+                switch (messageType) {
+                    case "AUTH_REQUEST":
+                        handleAuthRequest(session, payload);
+                        break;
+                    case "CHALLENGE_RESPONSE":
+                        handleChallengeResponse(session, payload);
+                        break;
+                    default:
+                        logger.warn("Unknown message type: {}", messageType);
+                        if (isAuthenticated(session)) {
+                            handleAuthenticatedMessage(session, payload);
+                        } else {
+                            sendErrorAndClose(session, "Authentication required");
+                        }
+                }
             } else {
-                sendErrorAndClose(session, "Authentication required");
+                logger.warn("Message has no type field: {}", payload);
+                if (isAuthenticated(session)) {
+                    handleAuthenticatedMessage(session, payload);
+                } else {
+                    sendErrorAndClose(session, "Authentication required");
+                }
             }
+        } catch (Exception e) {
+            logger.error("Error parsing message: {}", e.getMessage());
+            sendErrorAndClose(session, "Invalid message format");
         }
     }
     
