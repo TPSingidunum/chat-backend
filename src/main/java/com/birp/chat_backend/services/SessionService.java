@@ -11,7 +11,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.birp.chat_backend.dto.UserLoginDto;
+import com.birp.chat_backend.models.User;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -39,13 +39,14 @@ public class SessionService {
         return generateToken(claims, tokenId);
     }
 
-    public String generateDefault(UserLoginDto user) {
+    public String generateUserToken(User user) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("type", JwtType.access);
         claims.put("user_id", user.getUserId());
         claims.put("username", user.getUsername());
         claims.put("email", user.getEmail());
 
-        return generateToken(claims, user.getEmail());
+        return generateToken(claims, user.getUsername());
     }
 
     public boolean verifyToken(String token) {

@@ -54,7 +54,7 @@ public class AuthentificatedUserFilter extends OncePerRequestFilter {
         }
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                user,
+                claims,
                 null);
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authToken);

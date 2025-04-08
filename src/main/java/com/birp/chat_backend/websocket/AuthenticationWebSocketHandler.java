@@ -17,7 +17,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import com.birp.chat_backend.dto.UserLoginDto;
 import com.birp.chat_backend.dto.websocket.AuthenticationRequest;
 import com.birp.chat_backend.dto.websocket.AuthenticationResult;
 import com.birp.chat_backend.dto.websocket.ChallengeMessage;
@@ -164,16 +163,15 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
             authenticatedSessions.put(sessionId, true);
             
             // Generate JWT token for subsequent HTTP requests
-            UserLoginDto userDto = new UserLoginDto();
             Optional<User> userOptional = userService.fetchUserByEmail(email);
-            if (userOptional.isPresent()) {
-                User user = userOptional.get();
-                userDto.setUserId((long) user.getUserId());
-                userDto.setUsername(user.getUsername());
-                userDto.setEmail(user.getEmail());
+            if (userOptional.isEmpty()) {
+                sendErrorAndClose(session, "User not found");
+                return;
             }
             
-            String token = sessionService.generateDefault(userDto);
+            User user = userOptional.get();
+            // Generate token using the new method directly with User object
+            String token = sessionService.generateUserToken(user);
             
             // Send success response with token
             AuthenticationResult result = new AuthenticationResult();
