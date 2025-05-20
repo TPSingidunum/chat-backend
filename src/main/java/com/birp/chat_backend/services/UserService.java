@@ -23,6 +23,10 @@ public class UserService {
         return this.userRepository.findById(userId);
     }
 
+    public Optional<User> fetchUserByUsername(String username) {
+        return this.userRepository.findByUsername(username);
+    }
+
     public Optional<User> fetchUserByEmail(String email) {
         return this.userRepository.findByEmail(email);
     }
