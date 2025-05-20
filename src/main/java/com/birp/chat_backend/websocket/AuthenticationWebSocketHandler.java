@@ -17,7 +17,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import com.birp.chat_backend.dto.websocket.AuthenticationRequest;
 import com.birp.chat_backend.dto.websocket.AuthenticationResult;
 import com.birp.chat_backend.dto.websocket.ChallengeMessage;
 import com.birp.chat_backend.dto.websocket.ChallengeResponse;
@@ -42,6 +41,7 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
     private final CertificateUtil certificateUtil;
     
     // Store session challenges for verification
+    // Redis server (Key-Value), mysql server(?)
     private final Map<String, String> sessionChallenges = new ConcurrentHashMap<>();
     private final Map<String, String> sessionEmails = new ConcurrentHashMap<>();
     private final Map<String, Boolean> authenticatedSessions = new ConcurrentHashMap<>();
@@ -63,15 +63,15 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
         
         try {
             // Parse the message as a JSON object
-            JsonNode jsonNode = objectMapper.readTree(payload);
+            JsonNode jsonPayload = objectMapper.readTree(payload);
             
             // Get the message type
-            if (jsonNode.has("type")) {
-                String messageType = jsonNode.get("type").asText();
+            if (jsonPayload.has("type")) {
+                String messageType = jsonPayload.get("type").asText();
                 
                 switch (messageType) {
                     case "AUTH_REQUEST":
-                        handleAuthRequest(session, payload);
+                        handleAuthRequest(session, jsonPayload);
                         break;
                     case "CHALLENGE_RESPONSE":
                         handleChallengeResponse(session, payload);
@@ -98,9 +98,8 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
         }
     }
     
-    private void handleAuthRequest(WebSocketSession session, String payload) throws Exception {
-        AuthenticationRequest authRequest = objectMapper.readValue(payload, AuthenticationRequest.class);
-        String email = authRequest.getEmail();
+    private void handleAuthRequest(WebSocketSession session, JsonNode payload) throws Exception {
+        String email = payload.get("email").asText();
         
         logger.info("Handling auth request for email: {}", email);
         
@@ -213,9 +212,17 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
     }
     
     private void handleAuthenticatedMessage(WebSocketSession session, String payload) throws IOException {
-        // For now, just log the message
+        //TODO: Implement real message storage
         System.out.println("Authenticated message received: " + payload);
         logger.info("Received authenticated message from session {}: {}", session.getId(), payload);
+
+            Map<String, String> msg = Map.of(
+                    "type", "MESSAGE_RECIEVED",
+                    "message", "Messsage has been recieved"
+            );
+
+            String json = objectMapper.writeValueAsString(msg);
+        session.sendMessage(new TextMessage(json));
     }
     
     private boolean isAuthenticated(WebSocketSession session) {
@@ -224,6 +231,7 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
     }
     
     private void sendErrorAndClose(WebSocketSession session, String errorMessage) throws IOException {
+        //TODO: Shouldn't be just auth result, make it CustomResult
         AuthenticationResult result = new AuthenticationResult();
         result.setSuccess(false);
         result.setMessage(errorMessage);
@@ -231,13 +239,6 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
         logger.error("Authentication error: {}", errorMessage);
         
         session.sendMessage(new TextMessage(objectMapper.writeValueAsString(result)));
-        session.close(CloseStatus.POLICY_VIOLATION);
-        
-        // Clean up
-        String sessionId = session.getId();
-        sessionChallenges.remove(sessionId);
-        sessionEmails.remove(sessionId);
-        authenticatedSessions.remove(sessionId);
     }
     
     @Override

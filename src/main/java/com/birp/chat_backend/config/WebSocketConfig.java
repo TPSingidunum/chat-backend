@@ -23,7 +23,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
         registry.addHandler(authenticationHandler, "/ws/auth")
-               .setAllowedOrigins("*"); // Update with specific origins in production
+               .setAllowedOrigins("*");
     }
 
     @Bean
