@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.birp.chat_backend.dto.websocket.DirectMessage;
+import com.birp.chat_backend.services.MessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -39,12 +41,15 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
     private final UserService userService;
     private final SessionService sessionService;
     private final CertificateUtil certificateUtil;
+    private final MessageService messageService;
     
     // Store session challenges for verification
     // Redis server (Key-Value), mysql server(?)
     private final Map<String, String> sessionChallenges = new ConcurrentHashMap<>();
     private final Map<String, String> sessionEmails = new ConcurrentHashMap<>();
     private final Map<String, Boolean> authenticatedSessions = new ConcurrentHashMap<>();
+    private final Map<Integer, WebSocketSession> userSessions = new ConcurrentHashMap<>();
+    private final Map<String, Integer> sessionUserIds = new ConcurrentHashMap<>();
     
     @PostConstruct
     public void init() {
@@ -192,6 +197,8 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
             }
             
             User user = userOptional.get();
+            userSessions.put(user.getUserId(), session);
+            sessionUserIds.put(sessionId, user.getUserId());
             // Generate token using the new method directly with User object
             String token = sessionService.generateUserToken(user);
             
@@ -203,6 +210,19 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
             
             session.sendMessage(new TextMessage(objectMapper.writeValueAsString(result)));
             logger.info("Authentication successful for session: {}", sessionId);
+
+            // Send any undelivered messages
+            try {
+                for (var m : messageService.consumeUndeliveredMessages(user.getUserId())) {
+                    Map<String, Object> msg = Map.of(
+                            "type", "NEW_MESSAGE",
+                            "fromUserId", m.getSender().getUserId(),
+                            "content", m.getContent());
+                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(msg)));
+                }
+            } catch (Exception e) {
+                logger.error("Error sending pending messages: {}", e.getMessage());
+            }
         } else {
             sendErrorAndClose(session, "Challenge verification failed");
         }
@@ -212,17 +232,36 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
     }
     
     private void handleAuthenticatedMessage(WebSocketSession session, String payload) throws IOException {
-        //TODO: Implement real message storage
-        System.out.println("Authenticated message received: " + payload);
-        logger.info("Received authenticated message from session {}: {}", session.getId(), payload);
+        JsonNode node = objectMapper.readTree(payload);
+        if (!node.has("type") || !"DIRECT_MESSAGE".equals(node.get("type").asText())) {
+            logger.warn("Unsupported authenticated message type: {}", payload);
+            return;
+        }
 
-            Map<String, String> msg = Map.of(
-                    "type", "MESSAGE_RECIEVED",
-                    "message", "Messsage has been recieved"
-            );
+        DirectMessage msg = objectMapper.treeToValue(node, DirectMessage.class);
+        Integer senderId = sessionUserIds.get(session.getId());
 
-            String json = objectMapper.writeValueAsString(msg);
-        session.sendMessage(new TextMessage(json));
+        WebSocketSession recipientSession = userSessions.get(msg.getToUserId());
+        if (recipientSession != null && recipientSession.isOpen()) {
+            Map<String, Object> out = Map.of(
+                    "type", "NEW_MESSAGE",
+                    "fromUserId", senderId,
+                    "content", msg.getContent());
+            recipientSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(out)));
+        } else {
+            try {
+                messageService.saveMessage(senderId, msg.getToUserId(), msg.getContent());
+            } catch (IllegalArgumentException e) {
+                sendErrorAndClose(session, e.getMessage());
+                return;
+            }
+        }
+
+        Map<String, String> ack = Map.of(
+                "type", "MESSAGE_RECEIVED",
+                "message", "Message has been received"
+        );
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(ack)));
     }
     
     private boolean isAuthenticated(WebSocketSession session) {
@@ -250,5 +289,9 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
         sessionChallenges.remove(sessionId);
         sessionEmails.remove(sessionId);
         authenticatedSessions.remove(sessionId);
+        Integer uid = sessionUserIds.get(sessionId);
+        if (uid != null) {
+            userSessions.remove(uid);
+        }
     }
 }
