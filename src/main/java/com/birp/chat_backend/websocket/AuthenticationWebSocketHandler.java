@@ -53,7 +53,7 @@ public class AuthenticationWebSocketHandler extends TextWebSocketHandler {
     
     @PostConstruct
     public void init() {
-        certificateUtil.init(); // Ensure certificate util is initialized
+        certificateUtil.init();
     }
     
     @Override

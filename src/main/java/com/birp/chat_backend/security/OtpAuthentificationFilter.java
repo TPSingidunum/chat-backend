@@ -1,12 +1,9 @@
 package com.birp.chat_backend.security;
 
 import java.io.IOException;
-
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import com.birp.chat_backend.services.SessionService;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

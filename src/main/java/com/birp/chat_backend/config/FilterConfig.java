@@ -3,12 +3,10 @@ package com.birp.chat_backend.config;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import com.birp.chat_backend.security.AuthentificatedUserFilter;
 import com.birp.chat_backend.security.OtpAuthentificationFilter;
 import com.birp.chat_backend.services.SessionService;
 import com.birp.chat_backend.services.UserService;
-
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -22,7 +20,7 @@ public class FilterConfig {
     public FilterRegistrationBean<OtpAuthentificationFilter> otpFilterRegistration() {
         FilterRegistrationBean<OtpAuthentificationFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new OtpAuthentificationFilter(sessionService));
-        registrationBean.addUrlPatterns("/api/v1/login", "/api/v1/register");
+        registrationBean.addUrlPatterns("/api/v1/login", "/api/v1/register", "/api/v1/suk/upload");
         registrationBean.setOrder(1);
         return registrationBean;
     }
