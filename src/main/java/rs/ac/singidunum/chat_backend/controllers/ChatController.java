@@ -1,31 +1,37 @@
 package rs.ac.singidunum.chat_backend.controllers;
 
 import lombok.AllArgsConstructor;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import rs.ac.singidunum.chat_backend.dtos.chat.LoginRequest;
-
-import java.util.HashMap;
+import rs.ac.singidunum.chat_backend.dtos.chat.LoginResponse;
+import rs.ac.singidunum.chat_backend.websocket.ConnectedUsers;
 
 @Controller
 @AllArgsConstructor
 public class ChatController {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final ConnectedUsers connectedUsers;
 
     @MessageMapping("/auth.login")
     @SendToUser("/queue/auth")
-    public HashMap<String, String> login(LoginRequest loginRequest) {
-        // Logica funkcije
+    public LoginResponse login(LoginRequest loginRequest, @Header("simpSessionId") String sessionId) {
 
-        System.out.println(loginRequest.toString());
+        connectedUsers.register(sessionId,loginRequest.getUsername());
+        broadcastConnectedUsers();
 
-        HashMap <String, String> map = new HashMap<>();
-        map.put("result", "success");
-        map.put("token", "token");
+        return new LoginResponse(true,"You have successfully connected");
+    }
 
-        return map;
+    void broadcastConnectedUsers() {
+        System.out.println("Sending user information");
+        simpMessagingTemplate.convertAndSend(
+        "/queue/auth",
+                connectedUsers.getConnectedUsers()
+        );
     }
 }
