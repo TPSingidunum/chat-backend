@@ -10,6 +10,8 @@ import rs.ac.singidunum.chat_backend.dtos.chat.LoginRequest;
 import rs.ac.singidunum.chat_backend.dtos.chat.LoginResponse;
 import rs.ac.singidunum.chat_backend.websocket.ConnectedUsers;
 
+import java.util.List;
+
 @Controller
 @AllArgsConstructor
 public class ChatController {
@@ -29,9 +31,7 @@ public class ChatController {
 
     void broadcastConnectedUsers() {
         System.out.println("Sending user information");
-        simpMessagingTemplate.convertAndSend(
-        "/queue/auth",
-                connectedUsers.getConnectedUsers()
-        );
+        List<String> users = connectedUsers.getConnectedUsers();
+        simpMessagingTemplate.convertAndSend("/topic/users", users);
     }
 }
