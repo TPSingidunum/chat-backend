@@ -15,6 +15,10 @@ public class ConnectedUsers {
         usersBySessionId.put(sessionId,username);
     }
 
+    public String getUsername(String sessionId) {
+        return usersBySessionId.getOrDefault(sessionId, "TEMP");
+    }
+
     public void remove(String sessionId) {
         usersBySessionId.remove(sessionId);
     }

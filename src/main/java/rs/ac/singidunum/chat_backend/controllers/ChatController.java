@@ -8,8 +8,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import rs.ac.singidunum.chat_backend.dtos.chat.SendMessageRequest;
 import rs.ac.singidunum.chat_backend.dtos.chat.LoginRequest;
 import rs.ac.singidunum.chat_backend.dtos.chat.LoginResponse;
+import rs.ac.singidunum.chat_backend.dtos.chat.SendMessageResponse;
 import rs.ac.singidunum.chat_backend.websocket.ConnectedUsers;
 
 import java.util.List;
@@ -35,6 +37,17 @@ public class ChatController {
     @SendToUser("/queue/connected-users")
     public List<String> getConnectedUsers() {
         return connectedUsers.getConnectedUsers();
+    }
+
+    @MessageMapping("/chat.send")
+    public void receiveMessage(SendMessageRequest message, @Header("simpSessionId") String sessionId) {
+        String sendingUser = connectedUsers.getUsername(sessionId);
+        broadcastMessageToUsers(sendingUser, message.getPayload());
+    }
+
+    private void broadcastMessageToUsers(String sendingUser, String message) {
+        SendMessageResponse response = new SendMessageResponse(sendingUser, message);
+        simpMessagingTemplate.convertAndSend("/topic/chat", response);
     }
 
     void broadcastConnectedUsers() {
