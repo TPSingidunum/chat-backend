@@ -27,6 +27,6 @@ public class User {
     @Column(name="signed_pre_key", nullable = false)
     private String signedPreKey;
 
-    @Column(name="signed_pre_key_signature", nullable = false)
-    private String signedPreKeySignature;
+    @Column(name="signature", nullable = false)
+    private String signature;
 }

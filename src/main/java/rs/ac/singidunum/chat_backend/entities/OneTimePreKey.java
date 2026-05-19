@@ -18,6 +18,9 @@ public class OneTimePreKey {
     @Column(name = "user_id", nullable = false)
     private int userId;
 
+    @Column(name = "pre_key_id", nullable = false)
+    private int preKeyId;
+
     @Column(name = "pre_key", nullable = false)
     private String preKey;
 
