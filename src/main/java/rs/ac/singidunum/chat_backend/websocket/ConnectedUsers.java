@@ -26,4 +26,8 @@ public class ConnectedUsers {
     public List<String> getConnectedUsers() {
         return usersBySessionId.values().stream().distinct().sorted().toList();
     }
+
+    public boolean isOnline(String username) {
+        return usersBySessionId.containsValue(username);
+    }
 }
